@@ -1,0 +1,158 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local hubGui = player:WaitForChild("PlayerGui"):WaitForChild("ThanhDanHubGui")
+local mainFrame = hubGui:WaitForChild("MainFrame")
+local titleLabel = mainFrame:WaitForChild("TitleLabel")  -- Đây là TextLabel hiển thị "ThanhDan Hub"
+local startCollectButton = mainFrame:WaitForChild("StartCollectButton")
+local stopCollectButton = mainFrame:WaitForChild("StopCollectButton")
+local speedBox = mainFrame:WaitForChild("SpeedBox")
+local resetCoinToggle = mainFrame:WaitForChild("ResetCoinToggle")  -- Nút bật/tắt tính năng tự reset khi đầy coin
+local resetThreshold = 40  -- Ngưỡng coin đầy
+
+local collecting = false -- Biến kiểm tra trạng thái thu thập
+local speed = 30 -- Tốc độ mặc định
+local autoResetEnabled = false -- Biến bật/tắt tính năng tự reset
+
+-- Thông báo lỗi nếu tốc độ vượt quá giới hạn
+local warningLabel = Instance.new("TextLabel")
+warningLabel.Parent = mainFrame
+warningLabel.Size = UDim2.new(0, 300, 0, 50)
+warningLabel.Position = UDim2.new(0.5, -150, 0.5, 10)  -- Vị trí của thông báo
+warningLabel.Text = "Tốc độ quá nhanh! Có thể bị kick!"
+warningLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+warningLabel.TextScaled = true
+warningLabel.Font = Enum.Font.SourceSansBold
+warningLabel.Visible = false -- Ẩn thông báo ban đầu
+
+-- Hàm kiểm tra số lượng coin và reset khi đầy
+local function checkAndResetCoins()
+    local coinCount = 0
+    for _, coin in ipairs(workspace:GetChildren()) do
+        if coin:IsA("BasePart") and coin.Name == "Coin" then
+            coinCount = coinCount + 1
+        end
+    end
+
+    if coinCount >= resetThreshold and autoResetEnabled then
+        -- Reset game (xóa tất cả đồng xu)
+        for _, coin in ipairs(workspace:GetChildren()) do
+            if coin:IsA("BasePart") and coin.Name == "Coin" then
+                coin:Destroy()
+            end
+        end
+        print("Đã reset vì đạt ngưỡng coin!")
+    end
+end
+
+-- Hàm di chuyển nhân vật đến đồng xu
+local function movePlayerToCoin(coin)
+    local coinPosition = coin.Position
+    local direction = (coinPosition - humanoidRootPart.Position).Unit  -- Tính hướng từ nhân vật đến coin
+    local distance = (coinPosition - humanoidRootPart.Position).Magnitude  -- Tính khoảng cách giữa nhân vật và coin
+
+    -- Tạo tween để di chuyển nhân vật đến đồng xu
+    local tweenService = game:GetService("TweenService")
+    local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
+
+    local goal = {CFrame = CFrame.new(coinPosition)}  -- Đặt mục tiêu là vị trí của coin
+    local tween = tweenService:Create(humanoidRootPart, tweenInfo, goal)
+    tween:Play()
+
+    tween.Completed:Connect(function()
+        coin:Destroy() -- Sau khi đến đồng xu, đồng xu sẽ bị xóa
+    end)
+end
+
+-- Hàm bắt đầu thu thập coin
+local function startCollectingCoins()
+    collecting = true
+    while collecting do
+        for _, coin in ipairs(workspace:GetChildren()) do
+            if coin:IsA("BasePart") and coin.Name == "Coin" then
+                movePlayerToCoin(coin)  -- Di chuyển nhân vật đến coin
+            end
+        end
+        checkAndResetCoins() -- Kiểm tra và reset nếu cần
+        wait(1) -- Kiểm tra mỗi giây
+    end
+end
+
+-- Hàm dừng thu thập coin
+local function stopCollectingCoins()
+    collecting = false
+end
+
+-- Lắng nghe sự kiện khi người chơi nhấn nút bắt đầu thu thập coin
+startCollectButton.MouseButton1Click:Connect(function()
+    local inputSpeed = tonumber(speedBox.Text)
+    if inputSpeed then
+        speed = inputSpeed -- Cập nhật tốc độ từ TextBox
+
+        -- Kiểm tra tốc độ và hiển thị cảnh báo nếu vượt quá 45
+        if speed > 45 then
+            warningLabel.Visible = true  -- Hiển thị thông báo cảnh báo
+        else
+            warningLabel.Visible = false -- Ẩn thông báo cảnh báo
+        end
+    end
+    startCollectingCoins()
+end)
+
+-- Lắng nghe sự kiện khi người chơi nhấn nút dừng thu thập coin
+stopCollectButton.MouseButton1Click:Connect(function()
+    stopCollectingCoins()
+end)
+
+-- Lắng nghe sự kiện khi người chơi thay đổi trạng thái bật/tắt tính năng tự reset
+resetCoinToggle.MouseButton1Click:Connect(function()
+    autoResetEnabled = not autoResetEnabled
+    if autoResetEnabled then
+        resetCoinToggle.Text = "Tự Reset: Bật"
+    else
+        resetCoinToggle.Text = "Tự Reset: Tắt"
+    end
+end)
+
+-- Tạo một nút trên giao diện điện thoại để mở/đóng menu
+local toggleButton = Instance.new("TextButton")
+toggleButton.Parent = hubGui
+toggleButton.Size = UDim2.new(0, 100, 0, 50)
+toggleButton.Position = UDim2.new(0, 10, 0, 10)
+toggleButton.Text = "Menu"
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 250)
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.Font = Enum.Font.SourceSans
+toggleButton.TextScaled = true
+
+toggleButton.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+end)
+
+-- Hàm thay đổi màu sắc tự động của chữ "ThanhDan Hub"
+local function changeTitleColor()
+    local tweenService = game:GetService("TweenService")
+    
+    -- Cấu hình tween cho màu sắc
+    local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true)
+    local goal = {TextColor3 = Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255))}
+    
+    -- Tạo tween cho TitleLabel
+    local tween = tweenService:Create(titleLabel, tweenInfo, goal)
+    tween:Play()
+end
+
+-- Tạo và hiển thị TextLabel "ThanhDan Hub"
+if not titleLabel then
+    titleLabel = Instance.new("TextLabel")
+    titleLabel.Parent = mainFrame
+    titleLabel.Size = UDim2.new(0, 200, 0, 50)
+    titleLabel.Position = UDim2.new(0.5, -100, 0, 10)  -- Đặt vị trí chữ ở giữa
+    titleLabel.Text = "ThanhDan Hub"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextScaled = true
+    titleLabel.Font = Enum.Font.SourceSansBold
+end
+
+-- Gọi hàm để bắt đầu thay đổi màu chữ
+changeTitleColor()
