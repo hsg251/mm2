@@ -1,11 +1,11 @@
 -- Các tham số có thể thay đổi
 local player = game.Players.LocalPlayer
-local mouse = player:GetMouse()
-local farmSpeed = 30          -- Tốc độ di chuyển (sử dụng tốc độ này để bay đến coin)
-local autoFarmEnabled = true  -- Bật/tắt chế độ auto farm coin
+local farmSpeed = 30          -- Tốc độ di chuyển (cao quá có thể bị phát hiện)
+local autoFarmEnabled = false -- Bật/tắt chế độ auto farm coin
 local resetWhenFull = true    -- Tự động reset khi đầy coin
+local coinLimit = 40          -- Số coin tối đa trước khi reset
 
--- Tạo GUI (giao diện người dùng) với nhãn "ThanhDan Hub"
+-- Tạo GUI với nhãn Thanhdan Hub
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player.PlayerGui
 
@@ -19,7 +19,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 0, 50)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
 titleLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-titleLabel.Text = "ThanhDan Hub"
+titleLabel.Text = "Thanhdan Hub"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextSize = 20
 titleLabel.TextAlign = Enum.TextAlign.Center
@@ -34,94 +34,14 @@ toggleAutoFarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleAutoFarmButton.TextSize = 18
 toggleAutoFarmButton.Parent = frame
 
-local speedSliderLabel = Instance.new("TextLabel")
-speedSliderLabel.Size = UDim2.new(1, 0, 0, 50)
-speedSliderLabel.Position = UDim2.new(0, 0, 0, 120)
-speedSliderLabel.Text = "Tốc độ: " .. tostring(farmSpeed)
-speedSliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-speedSliderLabel.TextSize = 18
-speedSliderLabel.Parent = frame
-
 local resetCoinButton = Instance.new("TextButton")
 resetCoinButton.Size = UDim2.new(1, 0, 0, 50)
-resetCoinButton.Position = UDim2.new(0, 0, 0, 180)
+resetCoinButton.Position = UDim2.new(0, 0, 0, 120)
 resetCoinButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 resetCoinButton.Text = "Reset khi đầy Coin"
 resetCoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 resetCoinButton.TextSize = 18
 resetCoinButton.Parent = frame
-
--- Tạo TweenService để thay đổi màu chữ
-local TweenService = game:GetService("TweenService")
-
--- Hàm thay đổi màu chữ
-local function changeTextColor()
-    while true do
-        -- Tạo một Tween để thay đổi màu chữ
-        local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true)
-        local goal = {TextColor3 = Color3.fromRGB(math.random(0,255), math.random(0,255), math.random(0,255))}
-        local tween = TweenService:Create(titleLabel, tweenInfo, goal)
-        
-        -- Chạy tween
-        tween:Play()
-        
-        -- Chờ đến khi tween hoàn thành (1 giây)
-        wait(1)
-    end
-end
-
--- Bắt đầu thay đổi màu chữ
-changeTextColor()
-
--- Tạo sự kiện bật/tắt Auto Farm
-toggleAutoFarmButton.MouseButton1Click:Connect(function()
-    autoFarmEnabled = not autoFarmEnabled
-    if autoFarmEnabled then
-        toggleAutoFarmButton.Text = "Tắt Auto Farm Coin"
-        print("Auto farm coin đã bật.")
-    else
-        toggleAutoFarmButton.Text = "Bật Auto Farm Coin"
-        print("Auto farm coin đã tắt.")
-    end
-end)
-
--- Tạo sự kiện điều chỉnh tốc độ farm
-speedSliderLabel.MouseButton1Click:Connect(function()
-    farmSpeed = farmSpeed + 10
-    if farmSpeed > 45 then
-        -- Hiển thị thông báo cảnh báo khi tốc độ quá 45
-        local warningLabel = Instance.new("TextLabel")
-        warningLabel.Size = UDim2.new(0, 300, 0, 50)
-        warningLabel.Position = UDim2.new(0, 10, 0, 250)
-        warningLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
-        warningLabel.Text = "Tốc độ quá cao! Bạn có thể sẽ bị kick."
-        warningLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-        warningLabel.TextSize = 20
-        warningLabel.TextAlign = Enum.TextAlign.Center
-        warningLabel.Parent = screenGui
-
-        wait(3)  -- Hiển thị cảnh báo trong 3 giây
-        warningLabel:Destroy()
-    end
-
-    if farmSpeed > 100 then
-        farmSpeed = 30
-    end
-    speedSliderLabel.Text = "Tốc độ: " .. tostring(farmSpeed)
-    print("Tốc độ farm thay đổi: " .. tostring(farmSpeed))
-end)
-
--- Tạo sự kiện reset coin khi đầy
-resetCoinButton.MouseButton1Click:Connect(function()
-    resetWhenFull = not resetWhenFull
-    if resetWhenFull then
-        resetCoinButton.Text = "Tắt Reset khi đầy Coin"
-        print("Chế độ reset khi đầy coin đã bật.")
-    else
-        resetCoinButton.Text = "Bật Reset khi đầy Coin"
-        print("Chế độ reset khi đầy coin đã tắt.")
-    end
-end)
 
 -- Hàm tìm coin trong game
 local function findCoin()
@@ -137,41 +57,86 @@ end
 -- Hàm di chuyển đến coin gần nhất
 local function moveToCoin(coin)
     if not coin then return end
-    local targetPosition = coin.Position
     local character = player.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
         local humanoidRootPart = character.HumanoidRootPart
-        local direction = (targetPosition - humanoidRootPart.Position).unit
-        humanoidRootPart.Velocity = direction * farmSpeed
+        humanoidRootPart.CFrame = coin.CFrame
     end
 end
 
--- Hàm kiểm tra số coin và reset khi đạt 40 coin
+-- Hàm reset nhân vật
+local function resetCharacter()
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.Health = 0 -- Đặt máu bằng 0 để reset
+    end
+end
+
+-- Hàm kiểm tra số coin hiện tại
+local function getCoinCount()
+    local stats = player:FindFirstChild("leaderstats")
+    if stats then
+        local coins = stats:FindFirstChild("Coins")
+        if coins then
+            return tonumber(coins.Value) or 0
+        end
+    end
+    return 0
+end
+
+-- Hàm kiểm tra và reset khi đầy coin
 local function checkCoinLimit()
-    if player.Coins >= 40 then  -- Đổi giới hạn từ 100 sang 40
-        -- Reset lại số coin
-        player.Coins = 0
-        print("Đã reset số coin vì đã đạt 40 coin.")
+    local currentCoins = getCoinCount()
+    if currentCoins >= coinLimit and resetWhenFull then
+        print("Số coin đạt giới hạn! Đang reset...")
+        resetCharacter()
+        wait(2) -- Chờ 2 giây sau khi reset
     end
 end
 
--- Hàm tự động farm coin
+-- Hàm chính: Tự động farm coin
 local function autoFarmLoop()
     while autoFarmEnabled do
         local coins = findCoin()
         if #coins > 0 then
+            -- Tìm coin gần nhất
             local closestCoin = coins[1]
             for _, coin in pairs(coins) do
                 if (coin.Position - player.Character.HumanoidRootPart.Position).Magnitude < (closestCoin.Position - player.Character.HumanoidRootPart.Position).Magnitude then
                     closestCoin = coin
                 end
             end
+            -- Di chuyển đến coin gần nhất
             moveToCoin(closestCoin)
         end
-        checkCoinLimit()  -- Kiểm tra và reset coin khi đầy
-        wait(0.5)
+        checkCoinLimit() -- Kiểm tra và reset khi đầy coin
+        wait(0.5) -- Giới hạn tốc độ vòng lặp để tránh quá tải
     end
 end
 
--- Bắt đầu quá trình auto farm
-autoFarmLoop()
+-- Tạo sự kiện bật/tắt Auto Farm
+toggleAutoFarmButton.MouseButton1Click:Connect(function()
+    autoFarmEnabled = not autoFarmEnabled
+    if autoFarmEnabled then
+        toggleAutoFarmButton.Text = "Tắt Auto Farm Coin"
+        print("Auto farm coin đã bật.")
+        autoFarmLoop() -- Bắt đầu auto farm khi bật
+    else
+        toggleAutoFarmButton.Text = "Bật Auto Farm Coin"
+        print("Auto farm coin đã tắt.")
+    end
+end)
+
+-- Tạo sự kiện reset coin khi đầy
+resetCoinButton.MouseButton1Click:Connect(function()
+    resetWhenFull = not resetWhenFull
+    if resetWhenFull then
+        resetCoinButton.Text = "Tắt Reset khi đầy Coin"
+        print("Chế độ reset khi đầy coin đã bật.")
+    else
+        resetCoinButton.Text = "Bật Reset khi đầy Coin"
+        print("Chế độ reset khi đầy coin đã tắt.")
+    end
+end)
+
+-- Tạo giao diện với nhãn và nút bấm
+print("Thanhdan Hub đã khởi tạo thành công!")
