@@ -20,7 +20,7 @@ titleLabel.Size = UDim2.new(1, 0, 0, 50)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
 titleLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 255)  -- Màu nền nhãn xanh dương
 titleLabel.Text = "Thanhdan Hub"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)    -- Chữ màu trắng
 titleLabel.TextSize = 20
 titleLabel.TextAlign = Enum.TextAlign.Center
 titleLabel.Parent = frame
@@ -30,7 +30,7 @@ toggleAutoFarmButton.Size = UDim2.new(1, 0, 0, 50)
 toggleAutoFarmButton.Position = UDim2.new(0, 0, 0, 60)
 toggleAutoFarmButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Nút bật xanh lá
 toggleAutoFarmButton.Text = "Bật Auto Farm Coin"
-toggleAutoFarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleAutoFarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Chữ màu trắng
 toggleAutoFarmButton.TextSize = 18
 toggleAutoFarmButton.Parent = frame
 
@@ -39,7 +39,7 @@ resetCoinButton.Size = UDim2.new(1, 0, 0, 50)
 resetCoinButton.Position = UDim2.new(0, 0, 0, 120)
 resetCoinButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Nút reset đỏ
 resetCoinButton.Text = "Reset khi đầy Coin"
-resetCoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+resetCoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)    -- Chữ màu trắng
 resetCoinButton.TextSize = 18
 resetCoinButton.Parent = frame
 
