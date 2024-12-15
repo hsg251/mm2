@@ -12,7 +12,7 @@ screenGui.Parent = player.PlayerGui
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 300, 0, 200)
 frame.Position = UDim2.new(0, 10, 0, 10)
-frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  -- Thay màu nền sáng
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)  -- Thay màu nền tối
 frame.Parent = screenGui
 
 local titleLabel = Instance.new("TextLabel")
@@ -30,7 +30,7 @@ toggleAutoFarmButton.Size = UDim2.new(1, 0, 0, 50)
 toggleAutoFarmButton.Position = UDim2.new(0, 0, 0, 60)
 toggleAutoFarmButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Nút bật xanh lá
 toggleAutoFarmButton.Text = "Bật Auto Farm Coin"
-toggleAutoFarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Chữ màu trắng
+toggleAutoFarmButton.TextColor3 = Color3.fromRGB(0, 0, 0)  -- Chữ màu đen
 toggleAutoFarmButton.TextSize = 18
 toggleAutoFarmButton.Parent = frame
 
