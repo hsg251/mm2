@@ -4,7 +4,7 @@ local farmSpeed = 30          -- Tốc độ di chuyển (sử dụng tốc đ�
 local autoFarmEnabled = false -- Bật/tắt chế độ auto farm coin
 local resetWhenFull = true    -- Tự động reset khi đầy coin
 
--- Tạo GUI với nhãn "Thanhdan Hub" ở trên cùng
+-- Tạo GUI với nhãn "Thanhdan Hub"
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player.PlayerGui
 
