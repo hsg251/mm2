@@ -92,3 +92,60 @@ end)
 
 -- Thông báo menu beta đã khởi tạo
 print("Thanhdan Hub - Menu Beta đã được khởi tạo thành công!")
+
+-- Hàm tìm coin trong game
+local function findCoin()
+    local coins = {}
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj.Name == "Coin" and obj:IsA("Part") then
+            table.insert(coins, obj)
+        end
+    end
+    return coins
+end
+
+-- Hàm di chuyển đến coin gần nhất
+local function moveToCoin(coin)
+    if not coin then return end
+    local character = player.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local humanoidRootPart = character.HumanoidRootPart
+        humanoidRootPart.CFrame = coin.CFrame
+    end
+end
+
+-- Hàm kiểm tra số coin và reset khi đạt 40 coin
+local function checkCoinLimit()
+    local stats = player:FindFirstChild("leaderstats")
+    if stats then
+        local coins = stats:FindFirstChild("Coins")
+        if coins then
+            if coins.Value >= 40 and resetWhenFull then
+                -- Reset lại số coin
+                coins.Value = 0
+                print("Đã reset số coin vì đã đạt 40 coin.")
+            end
+        end
+    end
+end
+
+-- Hàm auto farm coin
+local function autoFarmLoop()
+    while autoFarmEnabled do
+        local coins = findCoin()
+        if #coins > 0 then
+            local closestCoin = coins[1]
+            for _, coin in pairs(coins) do
+                if (coin.Position - player.Character.HumanoidRootPart.Position).Magnitude < (closestCoin.Position - player.Character.HumanoidRootPart.Position).Magnitude then
+                    closestCoin = coin
+                end
+            end
+            moveToCoin(closestCoin)
+        end
+        checkCoinLimit()  -- Kiểm tra và reset coin khi đầy
+        wait(0.5)
+    end
+end
+
+-- Bắt đầu auto farm
+autoFarmLoop()
