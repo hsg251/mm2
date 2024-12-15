@@ -1,151 +1,36 @@
--- Các tham số có thể thay đổi
 local player = game.Players.LocalPlayer
-local farmSpeed = 30          -- Tốc độ di chuyển (sử dụng tốc độ này để bay đến coin)
-local autoFarmEnabled = false -- Bật/tắt chế độ auto farm coin
-local resetWhenFull = true    -- Tự động reset khi đầy coin
-
--- Tạo GUI với nhãn "Thanhdan Hub"
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player.PlayerGui
 
+-- Tạo khung giao diện
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 250)
+frame.Size = UDim2.new(0, 300, 0, 200)
 frame.Position = UDim2.new(0, 10, 0, 10)
-frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)  -- Nền tối
+frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)  -- Màu nền xám tối
 frame.Parent = screenGui
 
+-- Tiêu đề của GUI
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 0, 40)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 255)  -- Nền xanh dương cho nhãn
-titleLabel.Text = "Thanhdan Hub"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)    -- Chữ màu trắng
+titleLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 255)  -- Nền màu xanh
+titleLabel.Text = "Xin lỗi"  -- Tiêu đề
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)    -- Chữ trắng
 titleLabel.TextSize = 20
 titleLabel.TextAlign = Enum.TextAlign.Center
 titleLabel.Parent = frame
 
-local toggleAutoFarmButton = Instance.new("TextButton")
-toggleAutoFarmButton.Size = UDim2.new(1, 0, 0, 50)
-toggleAutoFarmButton.Position = UDim2.new(0, 0, 0, 60)
-toggleAutoFarmButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Nút bật màu xanh lá
-toggleAutoFarmButton.Text = "Bật Auto Farm Coin"
-toggleAutoFarmButton.TextColor3 = Color3.fromRGB(0, 0, 0)  -- Chữ màu đen
-toggleAutoFarmButton.TextSize = 18
-toggleAutoFarmButton.Parent = frame
+-- Nút đóng giao diện
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 100, 0, 50)
+closeButton.Position = UDim2.new(0, 100, 0, 100)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Màu đỏ
+closeButton.Text = "Đóng"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)    -- Chữ trắng
+closeButton.TextSize = 18
+closeButton.Parent = frame
 
-local resetCoinButton = Instance.new("TextButton")
-resetCoinButton.Size = UDim2.new(1, 0, 0, 50)
-resetCoinButton.Position = UDim2.new(0, 0, 0, 120)
-resetCoinButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Nút reset màu đỏ
-resetCoinButton.Text = "Reset khi đầy Coin"
-resetCoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)    -- Chữ màu trắng
-resetCoinButton.TextSize = 18
-resetCoinButton.Parent = frame
-
-local speedSlider = Instance.new("TextLabel")
-speedSlider.Size = UDim2.new(1, 0, 0, 50)
-speedSlider.Position = UDim2.new(0, 0, 0, 180)
-speedSlider.Text = "Tốc độ farm: " .. tostring(farmSpeed)
-speedSlider.TextColor3 = Color3.fromRGB(255, 255, 255)    -- Chữ màu trắng
-speedSlider.TextSize = 18
-speedSlider.TextAlign = Enum.TextAlign.Center
-speedSlider.Parent = frame
-
--- Tạo sự kiện bật/tắt Auto Farm
-toggleAutoFarmButton.MouseButton1Click:Connect(function()
-    autoFarmEnabled = not autoFarmEnabled
-    if autoFarmEnabled then
-        toggleAutoFarmButton.Text = "Tắt Auto Farm Coin"
-        print("Auto farm coin đã bật.")
-        -- Bắt đầu vòng lặp farm coin (sử dụng vòng lặp giả lập)
-        while autoFarmEnabled do
-            print("Đang farm coin...")
-            wait(1)  -- Chờ 1 giây
-        end
-    else
-        toggleAutoFarmButton.Text = "Bật Auto Farm Coin"
-        print("Auto farm coin đã tắt.")
-    end
+-- Đóng GUI khi nhấn nút
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
 end)
-
--- Tạo sự kiện reset coin khi đầy
-resetCoinButton.MouseButton1Click:Connect(function()
-    resetWhenFull = not resetWhenFull
-    if resetWhenFull then
-        resetCoinButton.Text = "Tắt Reset khi đầy Coin"
-        print("Chế độ reset khi đầy coin đã bật.")
-    else
-        resetCoinButton.Text = "Bật Reset khi đầy Coin"
-        print("Chế độ reset khi đầy coin đã tắt.")
-    end
-end)
-
--- Tạo sự kiện điều chỉnh tốc độ farm
-speedSlider.MouseButton1Click:Connect(function()
-    farmSpeed = farmSpeed + 10
-    if farmSpeed > 50 then
-        farmSpeed = 30  -- Reset tốc độ farm nếu quá nhanh
-    end
-    speedSlider.Text = "Tốc độ farm: " .. tostring(farmSpeed)
-    print("Tốc độ farm thay đổi: " .. tostring(farmSpeed))
-end)
-
--- Thông báo menu beta đã khởi tạo
-print("Thanhdan Hub - Menu Beta đã được khởi tạo thành công!")
-
--- Hàm tìm coin trong game
-local function findCoin()
-    local coins = {}
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == "Coin" and obj:IsA("Part") then
-            table.insert(coins, obj)
-        end
-    end
-    return coins
-end
-
--- Hàm di chuyển đến coin gần nhất
-local function moveToCoin(coin)
-    if not coin then return end
-    local character = player.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        local humanoidRootPart = character.HumanoidRootPart
-        humanoidRootPart.CFrame = coin.CFrame
-    end
-end
-
--- Hàm kiểm tra số coin và reset khi đạt 40 coin
-local function checkCoinLimit()
-    local stats = player:FindFirstChild("leaderstats")
-    if stats then
-        local coins = stats:FindFirstChild("Coins")
-        if coins then
-            if coins.Value >= 40 and resetWhenFull then
-                -- Reset lại số coin
-                coins.Value = 0
-                print("Đã reset số coin vì đã đạt 40 coin.")
-            end
-        end
-    end
-end
-
--- Hàm auto farm coin
-local function autoFarmLoop()
-    while autoFarmEnabled do
-        local coins = findCoin()
-        if #coins > 0 then
-            local closestCoin = coins[1]
-            for _, coin in pairs(coins) do
-                if (coin.Position - player.Character.HumanoidRootPart.Position).Magnitude < (closestCoin.Position - player.Character.HumanoidRootPart.Position).Magnitude then
-                    closestCoin = coin
-                end
-            end
-            moveToCoin(closestCoin)
-        end
-        checkCoinLimit()  -- Kiểm tra và reset coin khi đầy
-        wait(0.5)
-    end
-end
-
--- Bắt đầu auto farm
-autoFarmLoop()
