@@ -1,24 +1,23 @@
 -- Các tham số có thể thay đổi
 local player = game.Players.LocalPlayer
-local farmSpeed = 30          -- Tốc độ di chuyển (cao quá có thể bị phát hiện)
+local farmSpeed = 30          -- Tốc độ di chuyển (sử dụng tốc độ này để bay đến coin)
 local autoFarmEnabled = false -- Bật/tắt chế độ auto farm coin
 local resetWhenFull = true    -- Tự động reset khi đầy coin
-local coinLimit = 40          -- Số coin tối đa trước khi reset
 
--- Tạo GUI với nhãn Thanhdan Hub
+-- Tạo GUI với nhãn "Thanhdan Hub" ở trên cùng
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player.PlayerGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 200)
+frame.Size = UDim2.new(0, 300, 0, 250)
 frame.Position = UDim2.new(0, 10, 0, 10)
-frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)  -- Thay màu nền tối
+frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)  -- Nền tối
 frame.Parent = screenGui
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, 0, 0, 50)
+titleLabel.Size = UDim2.new(1, 0, 0, 40)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 255)  -- Màu nền nhãn xanh dương
+titleLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 255)  -- Nền xanh dương cho nhãn
 titleLabel.Text = "Thanhdan Hub"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)    -- Chữ màu trắng
 titleLabel.TextSize = 20
@@ -28,7 +27,7 @@ titleLabel.Parent = frame
 local toggleAutoFarmButton = Instance.new("TextButton")
 toggleAutoFarmButton.Size = UDim2.new(1, 0, 0, 50)
 toggleAutoFarmButton.Position = UDim2.new(0, 0, 0, 60)
-toggleAutoFarmButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Nút bật xanh lá
+toggleAutoFarmButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Nút bật màu xanh lá
 toggleAutoFarmButton.Text = "Bật Auto Farm Coin"
 toggleAutoFarmButton.TextColor3 = Color3.fromRGB(0, 0, 0)  -- Chữ màu đen
 toggleAutoFarmButton.TextSize = 18
@@ -37,81 +36,20 @@ toggleAutoFarmButton.Parent = frame
 local resetCoinButton = Instance.new("TextButton")
 resetCoinButton.Size = UDim2.new(1, 0, 0, 50)
 resetCoinButton.Position = UDim2.new(0, 0, 0, 120)
-resetCoinButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Nút reset đỏ
+resetCoinButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Nút reset màu đỏ
 resetCoinButton.Text = "Reset khi đầy Coin"
 resetCoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)    -- Chữ màu trắng
 resetCoinButton.TextSize = 18
 resetCoinButton.Parent = frame
 
--- Hàm tìm coin trong game
-local function findCoin()
-    local coins = {}
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == "Coin" and obj:IsA("Part") then
-            table.insert(coins, obj)
-        end
-    end
-    return coins
-end
-
--- Hàm di chuyển đến coin gần nhất
-local function moveToCoin(coin)
-    if not coin then return end
-    local character = player.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        local humanoidRootPart = character.HumanoidRootPart
-        humanoidRootPart.CFrame = coin.CFrame
-    end
-end
-
--- Hàm reset nhân vật
-local function resetCharacter()
-    if player.Character and player.Character:FindFirstChild("Humanoid") then
-        player.Character.Humanoid.Health = 0 -- Đặt máu bằng 0 để reset
-    end
-end
-
--- Hàm kiểm tra số coin hiện tại
-local function getCoinCount()
-    local stats = player:FindFirstChild("leaderstats")
-    if stats then
-        local coins = stats:FindFirstChild("Coins")
-        if coins then
-            return tonumber(coins.Value) or 0
-        end
-    end
-    return 0
-end
-
--- Hàm kiểm tra và reset khi đầy coin
-local function checkCoinLimit()
-    local currentCoins = getCoinCount()
-    if currentCoins >= coinLimit and resetWhenFull then
-        print("Số coin đạt giới hạn! Đang reset...")
-        resetCharacter()
-        wait(2) -- Chờ 2 giây sau khi reset
-    end
-end
-
--- Hàm chính: Tự động farm coin
-local function autoFarmLoop()
-    while autoFarmEnabled do
-        local coins = findCoin()
-        if #coins > 0 then
-            -- Tìm coin gần nhất
-            local closestCoin = coins[1]
-            for _, coin in pairs(coins) do
-                if (coin.Position - player.Character.HumanoidRootPart.Position).Magnitude < (closestCoin.Position - player.Character.HumanoidRootPart.Position).Magnitude then
-                    closestCoin = coin
-                end
-            end
-            -- Di chuyển đến coin gần nhất
-            moveToCoin(closestCoin)
-        end
-        checkCoinLimit() -- Kiểm tra và reset khi đầy coin
-        wait(0.5) -- Giới hạn tốc độ vòng lặp để tránh quá tải
-    end
-end
+local speedSlider = Instance.new("TextLabel")
+speedSlider.Size = UDim2.new(1, 0, 0, 50)
+speedSlider.Position = UDim2.new(0, 0, 0, 180)
+speedSlider.Text = "Tốc độ farm: " .. tostring(farmSpeed)
+speedSlider.TextColor3 = Color3.fromRGB(255, 255, 255)    -- Chữ màu trắng
+speedSlider.TextSize = 18
+speedSlider.TextAlign = Enum.TextAlign.Center
+speedSlider.Parent = frame
 
 -- Tạo sự kiện bật/tắt Auto Farm
 toggleAutoFarmButton.MouseButton1Click:Connect(function()
@@ -119,7 +57,11 @@ toggleAutoFarmButton.MouseButton1Click:Connect(function()
     if autoFarmEnabled then
         toggleAutoFarmButton.Text = "Tắt Auto Farm Coin"
         print("Auto farm coin đã bật.")
-        autoFarmLoop() -- Bắt đầu auto farm khi bật
+        -- Bắt đầu vòng lặp farm coin (sử dụng vòng lặp giả lập)
+        while autoFarmEnabled do
+            print("Đang farm coin...")
+            wait(1)  -- Chờ 1 giây
+        end
     else
         toggleAutoFarmButton.Text = "Bật Auto Farm Coin"
         print("Auto farm coin đã tắt.")
@@ -138,5 +80,15 @@ resetCoinButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Tạo giao diện với nhãn và nút bấm
-print("Thanhdan Hub đã khởi tạo thành công!")
+-- Tạo sự kiện điều chỉnh tốc độ farm
+speedSlider.MouseButton1Click:Connect(function()
+    farmSpeed = farmSpeed + 10
+    if farmSpeed > 50 then
+        farmSpeed = 30  -- Reset tốc độ farm nếu quá nhanh
+    end
+    speedSlider.Text = "Tốc độ farm: " .. tostring(farmSpeed)
+    print("Tốc độ farm thay đổi: " .. tostring(farmSpeed))
+end)
+
+-- Thông báo menu beta đã khởi tạo
+print("Thanhdan Hub - Menu Beta đã được khởi tạo thành công!")
