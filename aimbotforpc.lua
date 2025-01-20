@@ -65,11 +65,14 @@ local function getClosestPlayer()
 
     for _, player in ipairs(players:GetPlayers()) do
         if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local pos = player.Character.HumanoidRootPart.Position
-            local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(pos.X, pos.Z)).Magnitude
-            if distance < shortestDistance then
-                closest = player
-                shortestDistance = distance
+            -- Convert 3D position to 2D screen position
+            local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
+            if onScreen then
+                local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                if distance < shortestDistance then
+                    closest = player
+                    shortestDistance = distance
+                end
             end
         end
     end
@@ -78,13 +81,15 @@ end
 
 -- Update loop
 runService.RenderStepped:Connect(function()
-    -- Update circle position
-    circle.Position = Vector2.new(mouse.X, mouse.Y)
+    -- Update circle position (centered on mouse)
+    circle.Position = Vector2.new(mouse.X, mouse.Y) - Vector2.new(circle.Radius, circle.Radius)
     circle.Radius = circleSize
 
     if isAimLocked and lockedPlayer and lockedPlayer.Character and lockedPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local lockPosition = workspace.CurrentCamera:WorldToViewportPoint(lockedPlayer.Character.HumanoidRootPart.Position)
-        mouse.Move = Vector2.new(lockPosition.X, lockPosition.Y)
+        local lockPosition, onScreen = workspace.CurrentCamera:WorldToViewportPoint(lockedPlayer.Character.HumanoidRootPart.Position)
+        if onScreen then
+            mouse.Move = Vector2.new(lockPosition.X, lockPosition.Y)
+        end
     end
 end)
 
