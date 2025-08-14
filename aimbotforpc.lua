@@ -1,127 +1,185 @@
-local HttpService = game:GetService("HttpService")
+-- Services
 local Players = game:GetService("Players")
-local TextChatService = game:GetService("TextChatService")
-local revealCooldowns = {}
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
 
--- Initialize List ( Premium shit )
-shared.premiumUserIds = shared.premiumUserIds or {}
-local csvData = game:HttpGet("https://raw.githubusercontent.com/vertex-peak/API/refs/heads/main/API.csv")
-local lines = csvData:split("\n")
+-- Create the ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+ScreenGui.Name = "ModernGUI"
 
--- Simple hash function for Roblox
-local function simpleHash(message)
-    local hash = 0x12345678  
-    local seed = 0x7F3D8B9A  
-    local multiplier = 31    
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0, 300, 0, 150)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.Draggable = true
+MainFrame.Active = true
 
-    for i = 1, #message do
-        local byte = string.byte(message, i)  
-        hash = (hash * multiplier + byte + seed) % 0x100000000  -- Keep within 32-bit range 
+-- Squircle Shape
+local UICorner = Instance.new("UICorner")
+UICorner.Parent = MainFrame
+UICorner.CornerRadius = UDim.new(0, 20)
 
-        -- Rotate the hash left by 5 bits (with bit32)
-        hash = bit32.lshift(hash, 5) + bit32.rshift(hash, 27)
-        hash = hash % 0x100000000  -- Ensure it's within 32-bit range
-    end
+-- Title Bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Parent = MainFrame
+TitleBar.Size = UDim2.new(1, 0, 0, 25)
+TitleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TitleBar.BorderSizePixel = 0
 
-    return string.format("%08x", hash)
-end
+-- Title Label
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Parent = TitleBar
+TitleLabel.Size = UDim2.new(0, 50, 1, 0)
+TitleLabel.Position = UDim2.new(0, 5, 0, 0)
+TitleLabel.Text = "Sus R15"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.TextSize = 14
 
--- IDs ( I know most of the code is bad I don't care )
-for _, line in ipairs(lines) do
-    local parts = line:split(",")
-    if #parts == 2 and parts[1] ~= "" then
-        local robloxUserId = parts[1]
-        if robloxUserId then
-            table.insert(shared.premiumUserIds, robloxUserId)
-        end
-    end
-end
-
--- Handle incoming chat messages
-TextChatService.OnIncomingMessage = function(message: TextChatMessage)
-    if message.TextSource then
-        local player = Players:GetPlayerByUserId(message.TextSource.UserId)
-        local props = Instance.new("TextChatMessageProperties")
-
-        if player then
-            local playerName = player.Name
-
-            if table.find(shared.premiumUserIds, simpleHash(tostring(player.UserId))) then
-                message.PrefixText = "<font color='#F5CD30'>[VERTEX PREMIUM]</font> " .. "<font color='#FFFFFF'>" .. playerName .. "</font>" .. ":"
-                message.Text = message.Text 
-            elseif player.UserId == game:GetService("Players").LocalPlayer.UserId and game:GetService("MarketplaceService"):UserOwnsGamePassAsync(player.UserId, 429957) then
-                message.PrefixText = "<font color='#FF0000'>[ELITE]</font> " .. "<font color='#FF0000'>" .. playerName .. "</font>" .. ":"
-                message.Text = message.Text 
-            else
-                message.PrefixText = "<font color='#FFFFFF'>" .. playerName .. "</font>" .. ":"
-                message.Text = message.Text  
-            end
-        end
-    end
-end
-
-local function isPremiumUser(player)
-    return table.find(shared.premiumUserIds, simpleHash(tostring(player.UserId))) ~= nil
-end
-
-if isPremiumUser(Players.LocalPlayer) then 
-    shared.premium = true -- This won't give you command access nice try 🤓
-else 
-    shared.premium = false -- Setting it to false? For what ... Useless code...
-end 
-
--- Why you still here!? Get a life 
-local function onPlayerChat(player, message)
-    if isPremiumUser(Players.LocalPlayer) then return end -- Prevent command execution for premium users
-    local lowerMessage = message:lower()
-
-    if lowerMessage == ";kick all" and isPremiumUser(player) then
-        Players.LocalPlayer:Kick("Premium user has kicked you")
-    end
-    wait(.1)
-    if lowerMessage == ";reveal" and isPremiumUser(player) then
-        local currentTime = tick()
-
-        if revealCooldowns[player.UserId] and currentTime - revealCooldowns[player.UserId] < 10 then
-            return -- Ignore the command if it's too soon.. Don't abuse commands...
-        end
-
-        -- Update the cooldown time for this player
-        revealCooldowns[player.UserId] = currentTime
-
-        -- Send the "I'm using vertex" message
-        game:GetService("TextChatService").ChatInputBarConfiguration.TargetTextChannel:SendAsync("I'm using vertex")
-    end
-end
-
-game.Players.PlayerAdded:Connect(function(player)
-    player.Chatted:Connect(function(msg)
-        onPlayerChat(player, msg)
-    end)
+-- Close Button
+local CloseButton = Instance.new("TextButton")
+CloseButton.Parent = TitleBar
+CloseButton.Size = UDim2.new(0, 25, 1, 0)
+CloseButton.Position = UDim2.new(1, -25, 0, 0)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.BorderSizePixel = 0
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
 end)
 
-for _, player in pairs(game.Players:GetPlayers()) do
-    player.Chatted:Connect(function(msg)
-        onPlayerChat(player, msg)
-    end)
-end
+-- Minimize Button
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Parent = TitleBar
+MinimizeButton.Size = UDim2.new(0, 50, 1, 0)
+MinimizeButton.Position = UDim2.new(1, -75, 0, 0)
+MinimizeButton.Text = "Hide"
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+MinimizeButton.BorderSizePixel = 0
 
--- Skid!? 
-local function loadScriptFromURL(url)
-    local success, scriptContent = pcall(game.HttpGet, game, url)
-    if not success then
-        warn("Failed to fetch script: " .. tostring(scriptContent))
-        return
+local minimized = false
+MinimizeButton.MouseButton1Click:Connect(function()
+    if not minimized then
+        MainFrame.Size = UDim2.new(0, 300, 0, 25)
+        MinimizeButton.Text = "Show"
+    else
+        MainFrame.Size = UDim2.new(0, 300, 0, 150)
+        MinimizeButton.Text = "Hide"
     end
-    local func, err = loadstring(scriptContent)
-    if not func then
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/vertex-peak/vertex/refs/heads/main/universal"))()
-        return
-    end
-    success, result = pcall(func)
-end
+    minimized = not minimized
+end)
 
-if not shared.VertexExecuted then
-    shared.VertexExecuted = true
-    loadScriptFromURL("https://raw.githubusercontent.com/vertex-peak/vertex/main/modules/" .. game.PlaceId .. ".lua")
-end
+-- Text Box
+local TargetTextBox = Instance.new("TextBox")
+TargetTextBox.Parent = MainFrame
+TargetTextBox.Size = UDim2.new(0.9, 0, 0, 30)
+TargetTextBox.Position = UDim2.new(0.05, 0, 0.3, 0)
+TargetTextBox.PlaceholderText = "Enter target name"
+TargetTextBox.Text = ""
+TargetTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TargetTextBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+TargetTextBox.BorderSizePixel = 0
+
+-- Toggle Button
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Parent = MainFrame
+ToggleButton.Size = UDim2.new(0.9, 0, 0, 30)
+ToggleButton.Position = UDim2.new(0.05, 0, 0.6, 0)
+ToggleButton.Text = "Start"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+ToggleButton.BorderSizePixel = 0
+
+-- Functionality
+local following = false
+local targetPlayer = nil
+local animationId = "10714360343"
+local activeAnimation
+
+ToggleButton.MouseButton1Click:Connect(function()
+    if not following then
+        -- Start following
+        local targetName = TargetTextBox.Text:lower()
+        targetPlayer = nil
+        
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Name:lower():find(targetName) or player.DisplayName:lower():find(targetName) then
+                targetPlayer = player
+                break
+            end
+        end
+        
+        if targetPlayer and targetPlayer.Character then
+            following = true
+            ToggleButton.Text = "Stop"
+            
+            -- Play Animation
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                local animation = Instance.new("Animation")
+                animation.AnimationId = "rbxassetid://" .. animationId
+                activeAnimation = humanoid:LoadAnimation(animation)
+                activeAnimation:Play()
+            end
+
+            coroutine.wrap(function()
+                local lastPosition = nil
+                while following do
+                    local targetCharacter = targetPlayer.Character
+                    if targetCharacter and targetCharacter.PrimaryPart then
+                        local targetPosition = targetCharacter.PrimaryPart.Position
+                        local targetLookVector = targetCharacter.PrimaryPart.CFrame.LookVector
+
+                        -- Position in front of the target
+                        local forwardCFrame = targetCharacter.PrimaryPart.CFrame * CFrame.new(0, 0, -1.5) -- Slightly in front
+                        local backwardCFrame = targetCharacter.PrimaryPart.CFrame * CFrame.new(0, 0, -1.1) -- Closer to target
+
+                        -- Forward motion
+                        local tweenForward = TweenService:Create(
+                            LocalPlayer.Character.PrimaryPart,
+                            TweenInfo.new(0.15, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                            {CFrame = forwardCFrame}
+                        )
+                        tweenForward:Play()
+                        tweenForward.Completed:Wait()
+
+                        -- Backward motion
+                        local tweenBackward = TweenService:Create(
+                            LocalPlayer.Character.PrimaryPart,
+                            TweenInfo.new(0.15, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                            {CFrame = backwardCFrame}
+                        )
+                        tweenBackward:Play()
+                        tweenBackward.Completed:Wait()
+
+                        -- Stop if target becomes invalid
+                        lastPosition = targetPosition
+                    else
+                        following = false
+                        ToggleButton.Text = "Start"
+                        break
+                    end
+                end
+            end)()
+        else
+            print("Target not found!")
+        end
+    else
+        -- Stop following
+        following = false
+        ToggleButton.Text = "Start"
+        
+        -- Stop Animation
+        if activeAnimation then
+            activeAnimation:Stop()
+            activeAnimation = nil
+        end
+    end
+end)
